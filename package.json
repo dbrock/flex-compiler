@@ -1,0 +1,24 @@
+{
+  "author": "Daniel Brockman <@dbrock>",
+  "name": "fcsh-server",
+  "description": "Server around fcsh (the Flex compiler shell)",
+  "version": "0.0.0",
+  "main": "fcsh-server.js",
+  "bin": {
+    "flex-compiler-client": "flex-compiler-client.js",
+    "flex-compiler-command": "flex-compiler-command.sh",
+    "flex-compiler-server": "flex-compiler-server.js",
+    "flex-compiler-shell": "flex-compiler-shell.js",
+    "flex-home": "flex-home.js",
+    "mxmlcc": "mxmlcc.sh"
+  },
+  "dependencies": {
+    "on-stream-line": "~0.0.0",
+    "colors": "~0.6.0-1"
+  },
+  "devDependencies": {},
+  "optionalDependencies": {},
+  "engines": {
+    "node": "*"
+  }
+}
