@@ -14,6 +14,7 @@ module.exports = function () {
 
   fcsh.callbacks = []
   fcsh.command = null
+  fcsh.raw_lines = []
   fcsh.lines = []
   fcsh.queue = []
   fcsh.targets = {}
@@ -25,7 +26,9 @@ module.exports = function () {
     if (line === "(fcsh) ") {
       setTimeout(function () {
         var command = fcsh.command
+        var raw_lines = fcsh.raw_lines
         var lines = fcsh.lines
+        var success = fcsh.success
 
         log.detail("Ready for commands.")
 
@@ -36,8 +39,20 @@ module.exports = function () {
 
         fcsh.command = null
         fcsh.lines = []
+        fcsh.raw_lines = []
+        delete fcsh.success
 
         if (command !== null && fcsh.callbacks.length) {
+          if (!success && lines.every(function (line) {
+            return (/\bwarning: /i).test(line)
+          })) {
+            if (raw_lines.length) {
+              lines = raw_lines
+            } else {
+              lines = ["error: no output"]
+            }
+          }
+
           fcsh.callbacks.shift()(lines)
         }
 
@@ -61,8 +76,10 @@ module.exports = function () {
       } else if (line.match(/^Files changed: /)) {
         fcsh.drop_output_line()
       } else if (line.match(/\.sw[fc] \(\d+ bytes\)$/)) {
+        fcsh.success = true
         fcsh.drop_output_line()
       } else if (line.match(/^Nothing has changed since the last compile/)) {
+        fcsh.success = true
         fcsh.drop_output_line()
       } else if (line.match(/^fcsh: Target (\d+) not found$/)) {
         fcsh.drop_output_line()
@@ -90,6 +107,7 @@ module.exports = function () {
     if (line !== "") {
       if (fcsh.callbacks.length) {
         log.detail("<< %s", line)
+        fcsh.raw_lines.push(line)
         fcsh.lines.push(line)
       } else {
         log("<< %s", line)
