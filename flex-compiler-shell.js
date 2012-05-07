@@ -5,6 +5,7 @@ var child_process = require("child_process")
 var colors = require("colors")
 var inspect = require("util").inspect
 var log = require("./log.js")
+var main = require("main")
 var on_stream_line = require("on-stream-line")
 
 module.exports = function () {
@@ -151,18 +152,14 @@ module.exports = function () {
   return fcsh
 }
 
-if (module === require.main) {
-  var args = process.argv.slice(2)
+main.define(module, function (args) {
   var shell = module.exports()
 
   log.parse_argv(args)
 
   if (args.length) {
     shell.run_command(args.join(" "), function (lines) {
-      lines.forEach(function (line) {
-        console.log(line)
-      })
-
+      console.log(require("flex-simplify-error")(lines.join("\n")))
       process.exit()
     })
   } else {
@@ -191,4 +188,4 @@ if (module === require.main) {
       process.exit()
     })
   }
-}
+})

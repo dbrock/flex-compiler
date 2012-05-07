@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 var log = require("./log.js")
+var main = require("main")
 
 exports.socket = "/tmp/flex-compiler-server.socket"
 
@@ -23,8 +24,8 @@ exports.createServer = function () {
   return server
 }
 
-if (require.main === module) {
-  log.verbose = process.argv[2] === "--verbose"
+main.define(module, function (args) {
+  log.parse_argv(args)
   exports.createServer().listen(exports.socket)
   console.log("Listening to %s.", exports.socket)
-}
+})

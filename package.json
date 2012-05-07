@@ -9,13 +9,15 @@
     "flex-compiler-home": "flex-compiler-home.js",
     "flex-compiler-server": "flex-compiler-server.js",
     "flex-compiler-shell": "flex-compiler-shell.js",
-    "mxmlc": "mxmlc.sh",
-    "compc": "compc.sh",
-    "flex-compiler": "flex-compiler.sh"
+    "mxmlc": "flex-compiler.js",
+    "compc": "flex-compiler.js",
+    "flex-compiler": "flex-compiler.js"
   },
   "dependencies": {
+    "colors": "~0.6.0-1",
     "on-stream-line": "~0.0.0",
-    "colors": "~0.6.0-1"
+    "flex-simplify-error": "~0.0.0",
+    "main": "~0.0.0"
   },
   "devDependencies": {},
   "optionalDependencies": {},
