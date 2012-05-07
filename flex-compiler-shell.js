@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var FCSH = require("./flex-home.js") + "/bin/fcsh"
+var FCSH = require("./flex-compiler-home.js") + "/bin/fcsh"
 var child_process = require("child_process")
 var colors = require("colors")
 var inspect = require("util").inspect
@@ -31,7 +31,7 @@ module.exports = function () {
 
         if (fcsh.virgin) {
           fcsh.virgin = false
-          fcsh.emit("fcsh:ready")
+          fcsh.emit("fcsh-initialized")
         }
 
         fcsh.command = null
@@ -49,18 +49,22 @@ module.exports = function () {
       fcsh.add_output_line(line)
 
       if ((match = line.match(/^fcsh: Assigned (\d+) /))) {
-        fcsh.lines.shift()
+        fcsh.drop_output_line()
         fcsh.targets[fcsh.command] = match[1]
-        console.log("[%d] %s", match[1], fcsh.command)
+        log("[%d] %s", match[1], fcsh.command)
       } else if (line.match(/^Loading configuration file /)) {
-        fcsh.lines.shift()
+        fcsh.drop_output_line()
       } else if (line.match(/^Recompile: /)) {
-        fcsh.lines.shift()
+        fcsh.drop_output_line()
       } else if (line.match(/^Reason: /)) {
-        fcsh.lines.shift()
+        fcsh.drop_output_line()
       } else if (line.match(/^Files changed: /)) {
-        fcsh.lines.shift()
+        fcsh.drop_output_line()
+      } else if (line.match(/\.sw[fc] \(\d+ bytes\)$/)) {
+        fcsh.drop_output_line()
       } else if (line.match(/^fcsh: Target (\d+) not found$/)) {
+        fcsh.drop_output_line()
+
         var command = fcsh.command
 
         if (fcsh.targets[command]) {
@@ -75,6 +79,10 @@ module.exports = function () {
       }
     }
   })
+
+  fcsh.drop_output_line = function () {
+    fcsh.lines.pop()
+  }
 
   fcsh.add_output_line = function (line) {
     if (line !== "") {
@@ -145,12 +153,12 @@ module.exports = function () {
 
 if (module === require.main) {
   var args = process.argv.slice(2)
-  var fcsh = module.exports()
+  var shell = module.exports()
 
-  log.verbose = args[0] === "--verbose" && (args.shift(), true)
+  log.parse_argv(args)
 
   if (args.length) {
-    fcsh.run_command(args.join(" "), function (lines) {
+    shell.run_command(args.join(" "), function (lines) {
       lines.forEach(function (line) {
         console.log(line)
       })
@@ -158,19 +166,19 @@ if (module === require.main) {
       process.exit()
     })
   } else {
-    var prompt = "Flex-Compiler> "
+    var prompt = "fcsh> "
     var readline = require("readline").createInterface(
       process.stdin, process.stdout, null
     )
 
     readline.setPrompt(colors.bold(prompt), prompt.length)
 
-    fcsh.on("fcsh:ready", function () {
+    shell.on("fcsh-initialized", function () {
       readline.prompt()
     })
 
     readline.on("line", function (line) {
-      fcsh.run_command(line, function (lines) {
+      shell.run_command(line, function (lines) {
         lines.forEach(function (line) {
           console.log(line)
         })

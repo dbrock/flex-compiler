@@ -17,3 +17,8 @@ log.detail = function () {
   }
 }
 
+log.parse_argv = function (argv) {
+  if (argv.length && /^-V|--verbose$/.test(argv[0])) {
+    argv.shift(), log.verbose = true
+  }
+}

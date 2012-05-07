@@ -1,16 +1,17 @@
 {
   "author": "Daniel Brockman <@dbrock>",
-  "name": "fcsh-server",
-  "description": "Server around fcsh (the Flex compiler shell)",
+  "name": "flex-compiler",
+  "description": "Tools for dealing with the Adobe Flex compiler",
   "version": "0.0.0",
-  "main": "fcsh-server.js",
+  "main": "flex-compiler.js",
   "bin": {
     "flex-compiler-client": "flex-compiler-client.js",
-    "flex-compiler-command": "flex-compiler-command.sh",
+    "flex-compiler-home": "flex-compiler-home.js",
     "flex-compiler-server": "flex-compiler-server.js",
     "flex-compiler-shell": "flex-compiler-shell.js",
-    "flex-home": "flex-home.js",
-    "mxmlcc": "mxmlcc.sh"
+    "mxmlc": "mxmlc.sh",
+    "compc": "compc.sh",
+    "flex-compiler": "flex-compiler.sh"
   },
   "dependencies": {
     "on-stream-line": "~0.0.0",

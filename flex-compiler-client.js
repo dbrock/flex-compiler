@@ -22,7 +22,7 @@ module.exports.check = function (callback) {
 if (module === require.main) {
   var args = process.argv.slice(2)
 
-  log.verbose = args[0] === "--verbose" && (args.shift(), true)
+  log.parse_argv(args)
 
   if (args.length) {
     log("Sending command to server: " + args.join(" "))
