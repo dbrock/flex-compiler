@@ -5,7 +5,6 @@ var child_process = require("child_process")
 var colors = require("colors")
 var inspect = require("util").inspect
 var log = require("./log.js")
-var main = require("main")
 var on_stream_line = require("on-stream-line")
 
 module.exports = function () {
@@ -62,6 +61,8 @@ module.exports = function () {
       } else if (line.match(/^Files changed: /)) {
         fcsh.drop_output_line()
       } else if (line.match(/\.sw[fc] \(\d+ bytes\)$/)) {
+        fcsh.drop_output_line()
+      } else if (line.match(/^Nothing has changed since the last compile/)) {
         fcsh.drop_output_line()
       } else if (line.match(/^fcsh: Target (\d+) not found$/)) {
         fcsh.drop_output_line()
@@ -149,17 +150,28 @@ module.exports = function () {
     fcsh.callbacks.push(callback)
   }
 
+  fcsh.run_user_command = function (command, callback) {
+    if (command instanceof Array) {
+      // XXX: This will fail when quoting is needed.
+      command = command.join(" ")
+    }
+
+    fcsh.run_command(command, function (lines) {
+      callback(require("flex-simplify-error")(lines.join("\n")))
+    })
+  }
+
   return fcsh
 }
 
-main.define(module, function (args) {
+require("./define-main.js")(module, function (args) {
   var shell = module.exports()
 
   log.parse_argv(args)
 
   if (args.length) {
-    shell.run_command(args.join(" "), function (lines) {
-      console.log(require("flex-simplify-error")(lines.join("\n")))
+    shell.run_user_command(args, function (output) {
+      console.log(output)
       process.exit()
     })
   } else {
@@ -175,11 +187,8 @@ main.define(module, function (args) {
     })
 
     readline.on("line", function (line) {
-      shell.run_command(line, function (lines) {
-        lines.forEach(function (line) {
-          console.log(line)
-        })
-
+      shell.run_user_command(line, function (output) {
+        console.log(output)
         readline.prompt()
       })
     })

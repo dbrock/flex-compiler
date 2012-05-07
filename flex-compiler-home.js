@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-var main = require("main")
 var path = require("path")
 
 module.exports = process.env.FLEX_HOME || process.env.FLEX4_HOME ||
@@ -11,6 +10,6 @@ if (!path.existsSync(module.exports)) {
   process.exit(1)
 }
 
-main.define(module, function (args) {
+require("./define-main.js")(module, function (args) {
   console.log(module.exports)
 })

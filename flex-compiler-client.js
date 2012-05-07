@@ -1,30 +1,33 @@
 #!/usr/bin/env node
 
 var log = require("./log.js")
-var main = require("main")
 var net = require("net")
 var socket_name = require("./flex-compiler-server.js").socket
 
-module.exports = function (command, stdout) {
-  var socket = net.createConnection(socket_name, function () {
+module.exports = function (command, callback) {
+  log("Sending command to server: " + command)
+
+  var socket = net.connect(socket_name, function () {
+    require("slurp-stream")(socket, callback)
     socket.end(command + "\n")
-    socket.pipe(stdout)
   })
 }
 
 module.exports.check = function (callback) {
   log.detail("Checking whether compiler server is avaliable...")
 
-  net.createConnection(socket_name, function () {
+  var socket = net.connect(socket_name, function () {
     log.detail("Server is available.")
     callback(true)
+    socket.end()
   }).on("error", function () {
     log.detail("Server is not available.")
     callback(false)
+    socket.end()
   })
 }
 
-main.define(module, function (args) {
+require("./define-main.js")(module, function (args) {
   var check
 
   log.parse_argv(args)
@@ -39,7 +42,12 @@ main.define(module, function (args) {
     })
   } else {
     // XXX: This will fail when quoting is needed.
-    log("Sending command to server: " + args.join(" "))
-    module.exports(args.join(" "), process.stdout)
+    module.exports(args.join(" "), function (error, result) {
+      if (error) {
+        throw error
+      } else if (result) {
+        console.log(require("flex-simplify-error")(result))
+      }
+    })
   }
 })

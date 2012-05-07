@@ -2,7 +2,6 @@
 
 var fs = require("fs")
 var log = require("./log.js")
-var main = require("main")
 var path = require("path")
 
 fs.readdirSync(__dirname).forEach(function (filename) {
@@ -13,8 +12,8 @@ fs.readdirSync(__dirname).forEach(function (filename) {
   }
 })
 
-main.define(module, function (args) {
-  var program_name = path.basename(process.argv[1])
+require("./define-main.js")(module, function (args) {
+  var program_name = path.basename(require("optimist").argv.$0)
 
   log.parse_argv(args)
 
@@ -26,6 +25,8 @@ main.define(module, function (args) {
     if (server_available) {
       exports.client.__main__(args)
     } else {
+      console.warn("\
+Consider running `flex-compiler-server` for better performance.")
       exports.shell.__main__(args)
     }
   })
