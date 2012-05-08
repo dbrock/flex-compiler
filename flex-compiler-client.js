@@ -5,11 +5,13 @@ var net = require("net")
 var socket_name = require("./flex-compiler-server.js").socket
 
 module.exports = function (command, callback) {
+  command = JSON.stringify(command)
+
   log("Sending command to server: " + command)
 
   var socket = net.connect(socket_name, function () {
     require("slurp-stream")(socket, callback)
-    socket.end(command + "\n")
+    socket.write(command + "\n")
   })
 }
 
@@ -42,7 +44,7 @@ require("./define-main.js")(module, function (args) {
     })
   } else {
     // XXX: This will fail when quoting is needed.
-    module.exports(args.join(" "), function (error, result) {
+    module.exports(args, function (error, result) {
       if (error) {
         throw error
       } else if (result) {

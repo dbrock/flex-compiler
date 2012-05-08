@@ -30,17 +30,12 @@ module.exports = function () {
         var lines = fcsh.lines
         var success = fcsh.success
 
-        log.detail("Ready for commands.")
-
-        if (fcsh.virgin) {
-          fcsh.virgin = false
-          fcsh.emit("fcsh-initialized")
-        }
-
         fcsh.command = null
         fcsh.lines = []
         fcsh.raw_lines = []
         delete fcsh.success
+
+        log("Ready for commands.")
 
         if (command !== null && fcsh.callbacks.length) {
           if (!success && lines.every(function (line) {
@@ -54,6 +49,11 @@ module.exports = function () {
           }
 
           fcsh.callbacks.shift()(lines)
+        } else if (fcsh.virgin) {
+          fcsh.virgin = false
+          fcsh.emit("fcsh-initialized")
+        } else {
+          throw new Error
         }
 
         if (fcsh.queue.length) {
@@ -61,12 +61,13 @@ module.exports = function () {
         }
       }, 10)
     } else {
+      log.detail("[stdout] %s", line)
       fcsh.add_output_line(line)
 
       if ((match = line.match(/^fcsh: Assigned (\d+) /))) {
         fcsh.drop_output_line()
         fcsh.targets[fcsh.command] = match[1]
-        log("[%d] %s", match[1], fcsh.command)
+        log("Will use `compile %d` instead of `%s`.", match[1], fcsh.command)
       } else if (line.match(/^Loading configuration file /)) {
         fcsh.drop_output_line()
       } else if (line.match(/^Recompile: /)) {
@@ -87,8 +88,8 @@ module.exports = function () {
         var command = fcsh.command
 
         if (fcsh.targets[command]) {
+          log("Will not use `compile %d` again.", fcsh.targets[command])
           delete fcsh.targets[command]
-          log("Target not found; creating new target...")
 
           fcsh.wrap_callback(function (lines, callback) {
             fcsh.callbacks.unshift(callback)
@@ -106,11 +107,8 @@ module.exports = function () {
   fcsh.add_output_line = function (line) {
     if (line !== "") {
       if (fcsh.callbacks.length) {
-        log.detail("<< %s", line)
         fcsh.raw_lines.push(line)
         fcsh.lines.push(line)
-      } else {
-        log("<< %s", line)
       }
     }
   }
@@ -118,10 +116,17 @@ module.exports = function () {
   on_stream_line(fcsh.stderr, function (line) {
     var match
 
+    log.detail("[stderr] %s", line)
     fcsh.add_output_line(line)
 
-    if ((match = line.match(/^Error: unable to open /))) {
-      log.detail("Discarding other output.")
+    if (/^Error: unable to open /.test(line)) {
+      discard_other_output()
+    } else if (/^Error: a target file must be specified$/.test(line)) {
+      discard_other_output()
+    }
+
+    function discard_other_output() {
+      log("Discarding other output.")
       fcsh.wrap_callback(function (lines, callback) {
         callback([line])
       })
@@ -163,20 +168,18 @@ module.exports = function () {
     }
   }
 
-  fcsh.run_command = function (command, callback) {
-    fcsh._send_command(command)
-    fcsh.callbacks.push(callback)
-  }
-
-  fcsh.run_user_command = function (command, callback) {
-    if (command instanceof Array) {
+  fcsh.run_command = function (command, args, callback) {
+    if (!command) {
+      callback(["flex-compiler: missing command"])
+    } else if ("mxmlc compc".split(" ").indexOf(command) === -1) {
+      callback(["flex-compiler: no such command: " + command])
+    } else if (args.length === 0) {
+      callback(["flex-compiler: missing arguments to `" + command + "`"])
+    } else {
       // XXX: This will fail when quoting is needed.
-      command = command.join(" ")
+      fcsh._send_command([command].concat(args).join(" "))
+      fcsh.callbacks.push(callback)
     }
-
-    fcsh.run_command(command, function (lines) {
-      callback(require("flex-simplify-error")(lines.join("\n")))
-    })
   }
 
   return fcsh
@@ -188,8 +191,8 @@ require("./define-main.js")(module, function (args) {
   log.parse_argv(args)
 
   if (args.length) {
-    shell.run_user_command(args, function (output) {
-      console.log(output)
+    shell.run_user_command(args.shift(), args, function (output) {
+      console.log(require("flex-simplify-error")(lines.join("\n")))
       process.exit()
     })
   } else {
