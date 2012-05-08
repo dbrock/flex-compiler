@@ -57,7 +57,7 @@ module.exports = function () {
         }
 
         if (fcsh.queue.length) {
-          fcsh.run_command(fcsh.queue.shift(), fcsh.callbacks.shift())
+          fcsh._run_command(fcsh.queue.shift(), fcsh.callbacks.shift())
         }
       }, 10)
     } else {
@@ -168,6 +168,11 @@ module.exports = function () {
     }
   }
 
+  fcsh._run_command = function (command, callback) {
+    fcsh._send_command(command)
+    fcsh.callbacks.push(callback)
+  }
+
   fcsh.run_command = function (command, args, callback) {
     if (!command) {
       callback(["flex-compiler: missing command"])
@@ -177,8 +182,7 @@ module.exports = function () {
       callback(["flex-compiler: missing arguments to `" + command + "`"])
     } else {
       // XXX: This will fail when quoting is needed.
-      fcsh._send_command([command].concat(args).join(" "))
-      fcsh.callbacks.push(callback)
+      fcsh._run_command([command].concat(args).join(" "), callback)
     }
   }
 
@@ -191,7 +195,7 @@ require("./define-main.js")(module, function (args) {
   log.parse_argv(args)
 
   if (args.length) {
-    shell.run_user_command(args.shift(), args, function (output) {
+    shell.run_command(args.shift(), args, function (lines) {
       console.log(require("flex-simplify-error")(lines.join("\n")))
       process.exit()
     })
@@ -208,8 +212,10 @@ require("./define-main.js")(module, function (args) {
     })
 
     readline.on("line", function (line) {
-      shell.run_user_command(line, function (output) {
-        console.log(output)
+      var args = line.split(" ")
+
+      shell.run_command(args.shift(), args, function (lines) {
+        console.log(require("flex-simplify-error")(lines.join("\n")))
         readline.prompt()
       })
     })
