@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
+var filter_output = require("./filter-output.js")
 var log = require("./log.js")
 var net = require("net")
 var socket_name = require("./flex-compiler-server.js").socket
 
-module.exports = function (command, callback) {
+module.exports = exports = function (command, callback) {
   command = JSON.stringify(command)
 
   log("Sending command to server: " + command)
@@ -15,7 +16,7 @@ module.exports = function (command, callback) {
   })
 }
 
-module.exports.check = function (callback) {
+exports.check = function (callback) {
   log.detail("Checking whether compiler server is avaliable...")
 
   var socket = net.connect(socket_name, function () {
@@ -29,6 +30,25 @@ module.exports.check = function (callback) {
   })
 }
 
+exports.run = function (args, callback) {
+  exports(args, function (error, result) {
+    if (error) {
+      throw error
+    } else {
+      var match = result.match(/([\s\S]*(?:^|\n))((?:not )?ok)\n$/)
+
+      if (match) {
+        callback(match[2] === "ok", filter_output(match[1]))
+      } else {
+        process.stderr.write(result)
+        console.error("\
+flex-compiler-client: internal error: missing `ok` / `not ok` from server")
+        process.exit(-1)
+      }
+    }
+  })
+}
+
 require("./define-main.js")(module, function (args) {
   var check
 
@@ -39,17 +59,13 @@ require("./define-main.js")(module, function (args) {
   }
 
   if (check) {
-    module.exports.check(function (server_available) {
-      process.exit(server_available ? 0 : 1)
+    exports.check(function (available) {
+      process.exit(available ? 0 : 1)
     })
   } else {
-    // XXX: This will fail when quoting is needed.
-    module.exports(args, function (error, result) {
-      if (error) {
-        throw error
-      } else if (result) {
-        console.log(require("flex-simplify-error")(result))
-      }
+    exports.run(args, function (ok, output) {
+      process.stdout.write(output)
+      process.exit(ok ? 0 : 1)
     })
   }
 })

@@ -12,15 +12,16 @@ exports.createServer = function () {
   var server = new net.Server
 
   server.on("connection", function (socket) {
+    socket.on("error", function (error) {
+      log(error.stack)
+    })
+
     on_stream_line(socket, function (line) {
       var args = JSON.parse(line)
 
-      shell.run_command(args.shift(), args, function (lines) {
-        if (lines.length) {
-          socket.write(lines.join("\n") + "\n")
-        }
-
-        socket.end()
+      shell.run(args.shift(), args, function (ok, output) {
+        socket.write(output)
+        socket.end((ok ? "ok" : "not ok") + "\n")
       })
     })
   })

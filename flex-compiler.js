@@ -12,6 +12,18 @@ fs.readdirSync(__dirname).forEach(function (filename) {
   }
 })
 
+exports.run = function (args, callback) {
+  exports.client.check(function (server_available) {
+    if (server_available) {
+      exports.client.run(args, callback)
+    } else {
+      console.warn("\
+Consider running `flex-compiler-server` for better performance.")
+      exports.shell.run(args, callback)
+    }
+  })
+}
+
 require("./define-main.js")(module, function (args) {
   var program_name = path.basename(require("optimist").argv.$0)
 
@@ -21,13 +33,8 @@ require("./define-main.js")(module, function (args) {
     args.unshift(program_name)
   }
 
-  exports.client.check(function (server_available) {
-    if (server_available) {
-      exports.client.__main__(args)
-    } else {
-      console.warn("\
-Consider running `flex-compiler-server` for better performance.")
-      exports.shell.__main__(args)
-    }
+  exports.run(args, function (ok, output) {
+    process.stdout.write(output)
+    process.exit(ok ? 0 : 1)
   })
 })

@@ -1,0 +1,11 @@
+^fcsh: Assigned (\d+)
+^fcsh: Target (\d+) not found$
+^Loading configuration file
+^Detected configuration changes\.
+^Recompile:
+^Reason:
+^Updated:
+^Files changed:
+^Nothing has changed since the last compile
+^Required RSLs:
+\.sw[fc] \(\d+ bytes\)$

@@ -15,11 +15,11 @@
   },
   "dependencies": {
     "colors": "~0.6.0-1",
+    "linefeed": "~0.0.0",
     "main": "~0.0.0",
     "on-stream-line": "~0.0.0",
     "optimist": "~0.3.4",
-    "slurp-stream": "~0.0.0",
-    "flex-simplify-error": "~0.0.0"
+    "slurp-stream": "~0.0.0"
   },
   "devDependencies": {},
   "optionalDependencies": {},
